@@ -1,5 +1,27 @@
 <script setup>
-import { RouterLink } from "vue-router";
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+const username = ref("");
+const password = ref("");
+
+const isFormValid = computed(() => {
+    return username.value && password.value;
+});
+
+function login() {
+    if (isFormValid.value) {
+        // Autentifikacija
+        console.log("Sign in with:", username.value, password.value);
+        router.push({ path: "/main", query: { user: username.value } });
+    }
+}
+
+function continueAsGuest() {
+    router.push({ path: "/main", query: { user: "Guest" } });
+}
 </script>
 
 <template>
@@ -29,23 +51,21 @@ import { RouterLink } from "vue-router";
                 </div>
             </div>
 
-            <!-- Gumbi -->
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center space-y-4">
-                <RouterLink to="/signup" class="w-64">
-                    <button class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded">
-                        Sign Up
-                    </button>
-                </RouterLink>
-                <RouterLink to="/signin" class="w-64">
-                    <button class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded">
-                        Sign In
-                    </button>
-                </RouterLink>
-                <RouterLink to="/main?guest=true" class="w-64">
-                    <button class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold font-sans py-2 rounded">
-                        Continue as Guest
-                    </button>
-                </RouterLink>
+            <!-- Forma za prijavu -->
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-xs flex flex-col items-center space-y-3">
+                <input type="text" v-model="username" placeholder="Username" class="w-full border border-gray-400 rounded px-3 py-2" />
+                <input type="password" v-model="password" placeholder="Password" class="w-full border border-gray-400 rounded px-3 py-2" />
+
+                <button
+                    @click="login"
+                    :disabled="!isFormValid"
+                    :class="[ 
+                        'w-full text-white font-bold font-sans py-2 rounded',
+                        isFormValid ? 'bg-orange-600 hover:bg-orange-700 cursor-pointer' : 'bg-gray-400 cursor-not-allowed'
+                    ]"
+                >
+                    Log In
+                </button>
             </div>
 
             <!-- Donje ikone -->
@@ -73,5 +93,9 @@ import { RouterLink } from "vue-router";
 <style scoped>
 h1 {
     font-family: "Uncial Antiqua", serif;
+}
+
+input {
+    font-family: sans-serif;
 }
 </style>
