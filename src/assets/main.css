@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* prettier-ignore */
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  font-family: 'Uncial Antiqua', serif;
+}
