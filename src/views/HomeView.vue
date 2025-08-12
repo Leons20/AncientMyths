@@ -1,14 +1,17 @@
 <script setup>
 import { RouterLink } from "vue-router";
+import { useUserStore } from "@/stores/users.js";
+
+const userStore = useUserStore();
 </script>
 
 <template>
     <!-- prettier-ignore -->
     <div class="min-h-screen bg-white flex flex-col">
-        <!-- Gornji border -->
+        <!-- Header -->
         <div class="h-24 bg-orange-600 border-b-4 border-orange-700"></div>
 
-        <!-- Glavni sadržaj -->
+        <!-- Sadržaj -->
         <div class="relative flex-1 overflow-hidden">
 
             <!-- Gornje ikone + Naslov -->
@@ -41,7 +44,7 @@ import { RouterLink } from "vue-router";
                         Sign In
                     </button>
                 </RouterLink>
-                <RouterLink to="/main?guest=true" class="w-64">
+                <RouterLink to="/main" class="w-64" @click.native="userStore.continueAsGuest()">
                     <button class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold font-sans py-2 rounded">
                         Continue as Guest
                     </button>
@@ -65,7 +68,7 @@ import { RouterLink } from "vue-router";
             
         </div>
 
-        <!-- Donji border -->
+        <!-- Footer -->
         <div class="h-24 bg-orange-600 border-t-4 border-orange-700"></div>
     </div>
 </template>

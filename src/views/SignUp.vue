@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/users.js";
 
 const fullName = ref("");
 const email = ref("");
@@ -9,18 +10,21 @@ const password = ref("");
 const successMessage = ref("");
 
 const router = useRouter();
+const userStore = useUserStore();
 
 const isFormValid = computed(() => {
     return fullName.value && email.value && username.value && password.value;
 });
 
 function createAccount() {
-    successMessage.value = "Account successfully created";
+    userStore.register({
+        fullName: fullName.value,
+        email: email.value,
+        username: username.value,
+        password: password.value,
+    });
 
-    fullName.value = "";
-    email.value = "";
-    username.value = "";
-    password.value = "";
+    successMessage.value = "Account successfully created";
 
     setTimeout(() => {
         router.push("/signin");
@@ -31,10 +35,10 @@ function createAccount() {
 <template>
     <!-- prettier-ignore -->
     <div class="min-h-screen bg-white flex flex-col">
-        <!-- Gornji border -->
+        <!-- Header -->
         <div class="h-24 bg-orange-600 border-b-4 border-orange-700"></div>
 
-        <!-- Glavni sadržaj -->
+        <!-- Sadržaj -->
         <div class="relative flex-1 overflow-hidden">
 
             <!-- Gornje ikone + Naslov -->
@@ -57,10 +61,10 @@ function createAccount() {
 
             <!-- Forma za registraciju -->
             <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-xs flex flex-col items-center space-y-3">
-                <input type="text" v-model="fullName" placeholder="Full Name" class="w-full border border-gray-400 rounded px-3 py-2" />
-                <input type="email" v-model="email" placeholder="Email" class="w-full border border-gray-400 rounded px-3 py-2" />
-                <input type="text" v-model="username" placeholder="Username" class="w-full border border-gray-400 rounded px-3 py-2" />
-                <input type="password" v-model="password" placeholder="Password" class="w-full border border-gray-400 rounded px-3 py-2" />
+                <input v-model="fullName" type="text" placeholder="Full Name" class="w-full border border-gray-400 rounded px-3 py-2" />
+                <input v-model="email" type="email" placeholder="Email" class="w-full border border-gray-400 rounded px-3 py-2" />
+                <input v-model="username" type="text" placeholder="Username" class="w-full border border-gray-400 rounded px-3 py-2" />
+                <input v-model="password" type="password" placeholder="Password" class="w-full border border-gray-400 rounded px-3 py-2" />
 
                 <button
                     @click="createAccount"
@@ -95,7 +99,7 @@ function createAccount() {
             
         </div>
 
-        <!-- Donji border -->
+        <!-- Footer -->
         <div class="h-24 bg-orange-600 border-t-4 border-orange-700"></div>
     </div>
 </template>

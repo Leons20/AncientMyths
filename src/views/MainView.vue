@@ -1,20 +1,35 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/users.js";
 
 const router = useRouter();
-const route = useRoute();
+const userStore = useUserStore();
 
-const username = route.query.user;
-const isGuest = route.query.guest === "true";
+const isGuest = computed(() => userStore.isGuest);
+
+const username = ref(userStore.username);
+
+const selectedMyth = ref("");
+const selectedMythology = ref("");
 
 const searchFocused = ref(false);
 const selectFocused = ref(false);
+const settingsClicked = ref(false);
 
-const mythDropdown = ref(null);
 const mythInput = ref(null);
-const mythologiesDropdown = ref(null);
+const mythDropdown = ref(null);
 const mythologyInput = ref(null);
+const mythologiesDropdown = ref(null);
+
+const myths = [
+    { name: "The Contending of Horus and Seth", mythology: "Egyptian" },
+    { name: "The Story of Prometheus", mythology: "Greek" },
+    { name: "The Death of Baldur", mythology: "Norse" },
+    { name: "The Churning of the Ocean", mythology: "Hindu" },
+    { name: "Nüwa Mends the Heavens", mythology: "Chinese" },
+    { name: "The Hero Twins and the Lords of Xibalba", mythology: "Mayan" },
+];
 
 const mythologies = [
     { name: "Egyptian", color: "text-orange-600" },
@@ -25,33 +40,54 @@ const mythologies = [
     { name: "Mayan", color: "text-green-600" },
 ];
 
-const myths = [
-    "The Contending of Horus and Seth",
-    "The Story of Prometheus",
-    "The Death of Baldur",
-    "The Churning of the Ocean",
-    "Nüwa Mends the Heavens",
-    "The Hero Twins and the Lords of Xibalba",
-];
+const filteredMyths = computed(() => {
+    if (!selectedMythology.value) return myths;
+    return myths.filter((myth) => myth.mythology === selectedMythology.value);
+});
+
+const selectedMythologyObj = computed(() =>
+    mythologies.find((myth) => myth.name === selectedMythology.value),
+);
 
 const logout = () => {
     router.push("/");
 };
 
+const goToSettings = () => {
+    settingsClicked.value = !settingsClicked.value;
+    router.push({ path: "/settings", query: { user: username.value } });
+};
+
+const goToMyth = (myth) => {
+    const mythology = myth.mythology.toLowerCase();
+    router.push(`/myths/${mythology}`);
+};
+
 const handleClickOutside = (event) => {
-    /* prettier-ignore */
-    if (mythInput.value && mythDropdown.value && !mythInput.value.contains(event.target) && !mythDropdown.value.contains(event.target)) {
+    if (
+        mythInput.value &&
+        mythDropdown.value &&
+        !mythInput.value.contains(event.target) &&
+        !mythDropdown.value.contains(event.target)
+    ) {
         searchFocused.value = false;
     }
 
-    /* prettier-ignore */
-    if (mythologyInput.value && mythologiesDropdown.value && !mythologyInput.value.contains(event.target) && !mythologiesDropdown.value.contains(event.target)) {
+    if (
+        mythologyInput.value &&
+        mythologiesDropdown.value &&
+        !mythologyInput.value.contains(event.target) &&
+        !mythologiesDropdown.value.contains(event.target)
+    ) {
         selectFocused.value = false;
     }
 };
 
 onMounted(() => {
     document.addEventListener("click", handleClickOutside);
+    if (!isGuest && userStore.selectedMythology) {
+        selectedMythology.value = userStore.selectedMythology;
+    }
 });
 
 onBeforeUnmount(() => {
@@ -62,14 +98,22 @@ onBeforeUnmount(() => {
 <template>
     <!-- prettier-ignore -->
     <div class="min-h-screen bg-white flex flex-col">
-        <!-- Gornji border + Logout -->
+        <!-- Header -->
         <div class="h-24 bg-orange-600 border-b-4 border-orange-700 flex justify-end items-center px-6">
-            <div class="cursor-pointer" @click="logout">
-                <span class="text-white text-xl font-bold font-sans">Log Out</span>
+            <!-- Ako je gost, prikaži Log Out, inače ikonu postavki -->
+            <div class="cursor-pointer" @click="isGuest ? logout() : goToSettings()">
+                <template v-if="isGuest">
+                    <span class="text-white text-xl font-bold font-sans">Log Out</span>
+                </template>
+                <template v-else>
+                    <div class="p-2 rounded-full" :class="settingsClicked ? 'bg-green-600' : ''">
+                        <img src="/icons/settings.svg" class="h-16 w-16 filter invert" />
+                    </div>
+                </template>
             </div>
         </div>
 
-        <!-- Glavni sadržaj -->
+        <!-- Sadržaj -->
         <div class="relative flex-1 overflow-auto pb-10">
 
             <!-- Gornje ikone + Naslov -->
@@ -93,45 +137,23 @@ onBeforeUnmount(() => {
             <!-- Središnji sadržaj -->
             <div class="mt-48 flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
 
-                <!-- Poruka dobrodošlice -->
-                <h2 class="text-2xl text-center font-sans font-bold">
+                <h2 class="text-3xl text-center font-sans font-bold">
                     Welcome{{ !isGuest && username ? ' ' + username : '' }}!
                 </h2>
-
-                <!-- Input za mitove -->
-                <div class="relative w-full">
-                    <img src="/icons/search.svg" class="w-5 h-5 absolute left-3 top-3" />
-                    <input
-                        ref="mythInput"
-                        @focus="searchFocused = true"
-                        type="text"
-                        placeholder="Search for myths..."
-                        class="w-full pl-10 border border-gray-400 rounded px-4 py-2 font-sans"
-                    />
-                    <div
-                        ref="mythDropdown"
-                        v-if="searchFocused"
-                        class="absolute mt-2 w-full bg-white border border-gray-300 rounded shadow p-2 space-y-2 z-10"
-                    >
-                        <div
-                            v-for="(myth, index) in myths"
-                            :key="index"
-                            class="text-base font-sans cursor-pointer hover:underline"
-                        >
-                            {{ myth }}
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Input za mitologije -->
                 <div class="relative w-full">
                     <img src="/icons/select.svg" class="w-5 h-5 absolute left-3 top-3" />
                     <input
                         ref="mythologyInput"
+                        v-model="selectedMythology"
                         @focus="selectFocused = true"
                         type="text"
                         placeholder="Select mythology..."
-                        class="w-full pl-10 border border-gray-400 rounded px-4 py-2 font-sans"
+                        :class="[
+                            'w-full pl-10 border border-gray-400 rounded px-4 py-2 font-sans font-bold',
+                            selectedMythologyObj?.color
+                        ]"
                     />
                     <div
                         ref="mythologiesDropdown"
@@ -142,6 +164,34 @@ onBeforeUnmount(() => {
                             v-for="(myth, index) in mythologies"
                             :key="index"
                             :class="['text-base font-bold font-sans cursor-pointer hover:underline', myth.color]"
+                            @click="selectedMythology = myth.name; selectFocused = false"
+                        >
+                            {{ myth.name }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input za mitove -->
+                <div class="relative w-full">
+                    <img src="/icons/search.svg" class="w-5 h-5 absolute left-3 top-3" />
+                    <input
+                        ref="mythInput"
+                        v-model="selectedMyth"
+                        @focus="searchFocused = true"
+                        type="text"
+                        placeholder="Search for myths..."
+                        class="w-full pl-10 border border-gray-400 rounded px-4 py-2 font-sans font-bold"
+                    />
+                    <div
+                        ref="mythDropdown"
+                        v-if="searchFocused"
+                        class="absolute mt-2 w-full bg-white border border-gray-300 rounded shadow p-2 space-y-2 z-10"
+                    >
+                        <div
+                            v-for="(myth, index) in filteredMyths"
+                            :key="index"
+                            class="text-base font-bold font-sans cursor-pointer hover:underline"
+                            @click="selectedMyth = myth.name; searchFocused = false; goToMyth(myth)"
                         >
                             {{ myth.name }}
                         </div>
@@ -167,7 +217,7 @@ onBeforeUnmount(() => {
 
         </div>
 
-        <!-- Donji border -->
+        <!-- Footer -->
         <div class="h-24 bg-orange-600 border-t-4 border-orange-700"></div>
     </div>
 </template>

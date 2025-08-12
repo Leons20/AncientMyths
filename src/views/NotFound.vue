@@ -7,10 +7,10 @@ const route = useRoute();
 <template>
     <!-- prettier-ignore -->
     <div class="min-h-screen bg-white flex flex-col">
-        <!-- Gornji border -->
+        <!-- Header -->
         <div class="h-24 bg-orange-600 border-b-4 border-orange-700"></div>
 
-        <!-- Glavni sadržaj -->
+        <!-- Sadržaj -->
         <div class="relative flex-1 overflow-hidden">
 
             <!-- Gornje ikone -->
@@ -30,7 +30,7 @@ const route = useRoute();
 
             <!-- Poruka o grešci -->
             <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center px-4 flex flex-col items-center space-y-4">
-                <p class="text-xl font-sans text-gray-700">
+                <p class="text-2xl font-sans text-gray-700">
                     Page <strong>{{ route.path }}</strong> doesn't exist!
                 </p>
                 <RouterLink to="/" class="w-64 bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded text-center">
@@ -55,7 +55,7 @@ const route = useRoute();
             
         </div>
 
-        <!-- Donji border -->
+        <!-- Footer -->
         <div class="h-24 bg-orange-600 border-t-4 border-orange-700"></div>
     </div>
 </template>
