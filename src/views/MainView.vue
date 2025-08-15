@@ -2,16 +2,23 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
+import { useMythStore } from "@/stores/myths.js";
 
 const router = useRouter();
 const userStore = useUserStore();
+const mythStore = useMythStore();
 
 const isGuest = computed(() => userStore.isGuest);
-
 const username = ref(userStore.username);
 
 const selectedMyth = ref("");
-const selectedMythology = ref("");
+
+const selectedMythology = computed({
+    get: () => userStore.selectedMythology,
+    set: (value) => {
+        userStore.selectedMythology = value;
+    },
+});
 
 const searchFocused = ref(false);
 const selectFocused = ref(false);
@@ -21,15 +28,6 @@ const mythInput = ref(null);
 const mythDropdown = ref(null);
 const mythologyInput = ref(null);
 const mythologiesDropdown = ref(null);
-
-const myths = [
-    { name: "The Contending of Horus and Seth", mythology: "Egyptian" },
-    { name: "The Story of Prometheus", mythology: "Greek" },
-    { name: "The Death of Baldur", mythology: "Norse" },
-    { name: "The Churning of the Ocean", mythology: "Hindu" },
-    { name: "Nüwa Mends the Heavens", mythology: "Chinese" },
-    { name: "The Hero Twins and the Lords of Xibalba", mythology: "Mayan" },
-];
 
 const mythologies = [
     { name: "Egyptian", color: "text-orange-600" },
@@ -41,8 +39,22 @@ const mythologies = [
 ];
 
 const filteredMyths = computed(() => {
-    if (!selectedMythology.value) return myths;
-    return myths.filter((myth) => myth.mythology === selectedMythology.value);
+    let allMyths = [];
+
+    for (const mythology in mythStore.myths) {
+        mythStore.myths[mythology].forEach((item) => {
+            allMyths.push({
+                title: item.title,
+                mythology: mythology,
+            });
+        });
+    }
+
+    if (!selectedMythology.value) return allMyths;
+
+    return allMyths.filter(
+        (myth) => myth.mythology.toLowerCase() === selectedMythology.value.toLowerCase(),
+    );
 });
 
 const selectedMythologyObj = computed(() =>
@@ -58,9 +70,10 @@ const goToSettings = () => {
     router.push({ path: "/settings", query: { user: username.value } });
 };
 
-const goToMyth = (myth) => {
-    const mythology = myth.mythology.toLowerCase();
-    router.push(`/myths/${mythology}`);
+const goToMyth = (mythologyKey, myth) => {
+    router.push({
+        path: `/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth.title)}`,
+    });
 };
 
 const handleClickOutside = (event) => {
@@ -85,9 +98,6 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
     document.addEventListener("click", handleClickOutside);
-    if (!isGuest && userStore.selectedMythology) {
-        selectedMythology.value = userStore.selectedMythology;
-    }
 });
 
 onBeforeUnmount(() => {
@@ -189,13 +199,26 @@ onBeforeUnmount(() => {
                     >
                         <div
                             v-for="(myth, index) in filteredMyths"
-                            :key="index"
+                            :key="myth.mythology + '-' + index"
                             class="text-base font-bold font-sans cursor-pointer hover:underline"
-                            @click="selectedMyth = myth.name; searchFocused = false; goToMyth(myth)"
+                            @click="selectedMyth = myth.title; searchFocused = false; goToMyth(myth.mythology, myth)"
                         >
-                            {{ myth.name }}
+                            {{ myth.title }}
+                            <span class="text-sm text-gray-500" v-if="!selectedMythology">
+                                ({{ myth.mythology }})
+                            </span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Gumb za dodavanje mita -->
+                <div v-if="!isGuest" class="w-full">
+                    <button
+                        @click="router.push('/add-myth')"
+                        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded font-bold font-sans w-full"
+                    >
+                        Add a Myth
+                    </button>
                 </div>
 
             </div>

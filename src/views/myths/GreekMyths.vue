@@ -1,17 +1,28 @@
 <script setup>
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
 import { useMythStore } from "@/stores/myths.js";
 import { useReviewStore } from "@/stores/reviews.js";
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const mythStore = useMythStore();
 const reviewStore = useReviewStore();
 
 const mythologyKey = "Greek";
-const myth = mythStore.myths[mythologyKey][0];
+
+const mythsArray = computed(() => mythStore.myths[mythologyKey] || []);
+
+const myth = computed(() => {
+    if (!mythsArray.value.length) return null;
+
+    if (!route.params.title) return mythsArray.value[0];
+
+    const decodedTitle = decodeURIComponent(route.params.title).trim().toLowerCase();
+    return mythsArray.value.find((m) => m.title.trim().toLowerCase() === decodedTitle) || null;
+});
 
 const isGuest = computed(() => userStore.isGuest);
 
@@ -24,20 +35,17 @@ const goBackToMain = () => {
 };
 
 const goToReview = () => {
+    if (!myth.value) return;
+
     const query = {
-        from: `/myths/${mythologyKey.toLowerCase()}`,
+        from: `/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth.value.title)}`,
         mythology: mythologyKey,
-        myth: myth.title,
+        myth: myth.value.title,
     };
 
-    if (isGuest.value) {
-        query.guest = "true";
-    }
+    if (isGuest.value) query.guest = "true";
 
-    router.push({
-        path: "/review",
-        query: query,
-    });
+    router.push({ path: "/review", query });
 };
 </script>
 
@@ -56,40 +64,43 @@ const goToReview = () => {
         <!-- Sadržaj -->
         <div class="flex-1 flex flex-col justify-start items-center px-6 py-10 text-center mt-10 relative">
             <div class="max-w-3xl">
-                <!-- Slika mita -->
-                <div class="flex items-center justify-center mb-4 relative">
-                    <img :src="myth.image" class="w-128 h-96 object-cover rounded shadow-lg absolute left-[-550px] top-0"/>
-                    <h2 class="text-3xl font-bold">{{ myth.title }}</h2>
+                <div v-if="myth">
+                    <!-- Slika mita -->
+                    <div class="flex items-center justify-center mb-4 relative">
+                        <img :src="myth.image" class="w-128 h-96 object-cover rounded shadow-lg absolute left-[-550px] top-0"/>
+                        <h2 class="text-3xl font-bold">{{ myth.title }}</h2>
+                    </div>
+
+                    <!-- Tekst mita -->
+                    <p class="text-xl font-semibold mb-4">{{ myth.mythText }}</p>
+
+                    <!-- Poveznica na cijeli mit -->
+                    <a :href="myth.link" target="_blank" class="text-red-700 underline font-semibold mb-6 inline-block">
+                        Read more...
+                    </a>
+
+                    <h3 class="text-2xl font-bold mb-2">Interpretation</h3>
+                    <p class="text-xl font-semibold mb-6">{{ myth.interpretation }}</p>
+
+                    <!-- Gumb za recenziju -->
+                    <button
+                        v-if="userStore.isLoggedIn"
+                        @click="goToReview"
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold"
+                    >
+                        Write a Review
+                    </button>
                 </div>
-
-                <!-- Tekst mita -->
-                <p class="text-xl font-semibold mb-4">{{ myth.myth }}</p>
-
-                <!-- Poveznica na cijeli mit -->
-                <a :href="myth.link" target="_blank" class="text-red-700 underline font-semibold mb-6 inline-block">
-                    Read more...
-                </a>
-
-                <h3 class="text-2xl font-bold mb-2">Interpretation</h3>
-                <p class="text-xl font-semibold mb-6">{{ myth.interpretation }}</p>
-
-                <!-- Gumb za recenziju -->
-                <button
-                    v-if="userStore.isLoggedIn"
-                    @click="goToReview"
-                    class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold"
-                >
-                    Write a Review
-                </button>
+                <div v-else class="text-red-600 text-3xl font-bold mt-10">Myth not found.</div>
             </div>
         </div>
 
         <!-- Recenzije -->
         <div class="max-h-48 overflow-y-auto border-t border-gray-300 px-6 py-4">
             <h3 class="text-xl font-bold mb-3">Reviews</h3>
-            <div v-if="reviewStore.getReviews(`/myths/${mythologyKey.toLowerCase()}`).length" class="space-y-4">
+            <div v-if="reviewStore.getReviews(`/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth?.title || '')}`).length" class="space-y-4">
                 <div
-                    v-for="(review, index) in reviewStore.getReviews(`/myths/${mythologyKey.toLowerCase()}`)"
+                    v-for="(review, index) in reviewStore.getReviews(`/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth?.title || '')}`)"
                     :key="index"
                     class="bg-gray-100 p-3 rounded shadow"
                 >

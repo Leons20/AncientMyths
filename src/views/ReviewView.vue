@@ -11,11 +11,12 @@ const reviewStore = useReviewStore();
 
 const reviewText = ref("");
 
-const fromPath = route.query.from || "/main";
 const mythologyParam = route.query.mythology || "egyptian";
 const mythology = mythologyParam.toLowerCase();
 const mythologyTitle = mythologyParam.charAt(0).toUpperCase() + mythologyParam.slice(1) + " myths";
 const mythTitle = route.query.myth || "Myth";
+
+const backPath = `/myths/${mythology}/${encodeURIComponent(mythTitle)}`;
 
 const colors = {
     egyptian: { bg: "bg-orange-600", border: "border-orange-700", hover: "hover:bg-orange-700" },
@@ -29,13 +30,13 @@ const colors = {
 const selectedColors = colors[mythology] || colors.egyptian;
 
 const goBack = () => {
-    router.push(fromPath);
+    router.push(backPath);
 };
 
 const postReview = () => {
     if (reviewText.value.trim() === "") return;
-    reviewStore.addReview(fromPath, userStore.username, reviewText.value);
-    router.push(fromPath);
+    reviewStore.addReview(backPath, userStore.username, reviewText.value);
+    router.push(backPath);
 };
 </script>
 
@@ -43,7 +44,7 @@ const postReview = () => {
     <!-- prettier-ignore -->
     <div class="min-h-screen bg-white flex flex-col">
         <!-- Header -->
-        <div class="h-24 text-white px-6 py-4 flex justify-between items-center border-b-4" :class="[selectedColors.bg, selectedColors.border]">
+        <div :class="['h-24 text-white px-6 py-4 flex justify-between items-center border-b-4', selectedColors.bg, selectedColors.border]">
             <h1 class="text-2xl font-bold">{{ mythologyTitle }}</h1>
             <button @click="goBack" class="flex items-center space-x-2 font-semibold">
                 <img src="/icons/back.svg" class="w-10 h-10 filter invert" />
@@ -51,33 +52,66 @@ const postReview = () => {
             </button>
         </div>
 
-        <!-- Naslov mita -->
-        <div class="text-center mt-10">
-            <h2 class="text-3xl font-bold mb-8">{{ mythTitle }}</h2>
-        </div>
+        <!-- Sadržaj -->
+        <div class="flex-1 flex flex-col items-center justify-center relative">
 
-        <!-- Forma za recenziju -->
-        <div class="flex-1 flex flex-col justify-center items-center px-6 text-center">
-            <div class="max-w-lg w-full">
-                <textarea
-                    v-model="reviewText"
-                    placeholder="Write your review..."
-                    class="w-full rounded p-3 text-lg mb-6 resize-none border-2"
-                    :class="selectedColors.border"
-                    rows="5"
-                ></textarea>
-                <button
-                    @click="postReview"
-                    class="text-white px-6 py-2 rounded font-semibold"
-                    :class="[selectedColors.bg, selectedColors.hover]"
-                >
-                    Post Review
-                </button>
+            <!-- Gornje ikone -->
+            <div class="absolute top-10 w-full flex justify-between items-center px-6">
+                <!-- Lijeve ikone -->
+                <div class="flex gap-x-8">
+                    <img src="/icons/spartan.svg" class="h-28" />
+                    <img src="/icons/temple.svg" class="h-28 ml-24" />
+                </div>
+
+                <!-- Desne ikone -->
+                <div class="flex gap-x-8">
+                    <img src="/icons/greek-temple.svg" class="h-28 mr-24" />
+                    <img src="/icons/pyramid.svg" class="h-28" />
+                </div>
             </div>
+
+            <!-- Naslov mita -->
+            <div class="text-center mt-20">
+                <h2 class="text-3xl font-bold mb-8">{{ mythTitle }}</h2>
+            </div>
+
+            <!-- Forma za recenziju -->
+            <div class="flex-1 flex flex-col justify-center items-center px-6 text-center">
+                <div class="max-w-lg w-full">
+                    <textarea
+                        v-model="reviewText"
+                        placeholder="Write your review..."
+                        :class="['w-full rounded p-3 text-lg mb-6 resize-none border-2', selectedColors.border]"
+                        rows="7"
+                    ></textarea>
+                    <button
+                        @click="postReview"
+                        :class="['text-white px-6 py-2 rounded font-semibold', selectedColors.bg, selectedColors.hover]"
+                    >
+                        Post Review
+                    </button>
+                </div>
+            </div>
+
+            <!-- Donje ikone -->
+            <div class="absolute bottom-8 w-full flex justify-between items-center px-6">
+                <!-- Lijeve ikone -->
+                <div class="flex gap-x-8">
+                    <img src="/icons/buddha.svg" class="h-28" />
+                    <img src="/icons/hieroglyph.svg" class="h-28 ml-24" />
+                </div>
+
+                <!-- Desne ikone -->
+                <div class="flex gap-x-8">
+                    <img src="/icons/vase.svg" class="h-28 mr-24" />
+                    <img src="/icons/sphinx.svg" class="h-28" />
+                </div>
+            </div>
+
         </div>
 
         <!-- Footer -->
-        <div class="h-24 border-t-4" :class="[selectedColors.bg, selectedColors.border]"></div>
+        <div :class="['h-24 border-t-4', selectedColors.bg, selectedColors.border]"></div>
     </div>
 </template>
 
