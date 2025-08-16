@@ -18,6 +18,8 @@ const mythologyInputFocused = ref(false);
 const mythologyInput = ref(null);
 const mythologiesDropdown = ref(null);
 
+const previewImage = ref(userStore.profileImage || "");
+
 const mythologies = [
     { name: "Egyptian", color: "text-orange-600" },
     { name: "Greek", color: "text-red-600" },
@@ -27,12 +29,21 @@ const mythologies = [
     { name: "Mayan", color: "text-green-600" },
 ];
 
-const selectedMythologyObj = computed(() =>
-    mythologies.find((myth) => myth.name === selectedMythology.value),
-);
+const selectedMythologyObj = computed(() => mythologies.find((myth) => myth.name === selectedMythology.value));
 
 const goToSettings = () => {
     router.push({ path: "/settings", query: { user: username.value } });
+};
+
+const onFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 };
 
 function saveChanges() {
@@ -41,6 +52,13 @@ function saveChanges() {
     userStore.username = username.value;
     userStore.password = password.value;
     userStore.selectedMythology = selectedMythology.value;
+
+    userStore.profileImage = previewImage.value;
+
+    const userIndex = userStore.allUsers.findIndex((u) => u.email === userStore.email);
+    if (userIndex !== -1) {
+        userStore.allUsers[userIndex].profileImage = previewImage.value;
+    }
 
     goToSettings();
 }
@@ -105,18 +123,23 @@ onBeforeUnmount(() => {
                     <!-- Ikone korisnika i kamere -->
                     <div class="flex justify-center py-2">
                         <div class="relative w-32 h-32">
-                            <!-- Ikona korisnika -->
-                            <div class="w-full h-full border-2 border-gray-400 rounded-full flex items-center justify-center">
-                                <img src="/icons/user.svg" class="w-16 h-16" />
+                            <!-- Profilna slika ili default ikona -->
+                            <div class="w-full h-full border-2 border-gray-400 rounded-full flex items-center justify-center overflow-hidden">
+                                <img
+                                    :src="previewImage || '/icons/user.svg'"
+                                    class="w-full h-full object-cover"
+                                    alt="Profile Image"
+                                />
                             </div>
 
                             <!-- Ikona kamere -->
-                            <div
+                            <label
                                 class="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-12 h-12 border-2 
-                                border-gray-400 rounded-full flex items-center justify-center bg-white"
+                                border-gray-400 rounded-full flex items-center justify-center bg-white cursor-pointer"
                             >
                                 <img src="/icons/camera.svg" class="w-6 h-6" />
-                            </div>
+                                <input type="file" accept="image/*" @change="onFileChange" class="hidden" />
+                            </label>
                         </div>
                     </div>
 
@@ -190,7 +213,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-h1 {
-    font-family: "Uncial Antiqua", serif;
+* {
+    font-family: sans-serif;
 }
 </style>

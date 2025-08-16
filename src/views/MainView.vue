@@ -52,14 +52,10 @@ const filteredMyths = computed(() => {
 
     if (!selectedMythology.value) return allMyths;
 
-    return allMyths.filter(
-        (myth) => myth.mythology.toLowerCase() === selectedMythology.value.toLowerCase(),
-    );
+    return allMyths.filter((myth) => myth.mythology.toLowerCase() === selectedMythology.value.toLowerCase());
 });
 
-const selectedMythologyObj = computed(() =>
-    mythologies.find((myth) => myth.name === selectedMythology.value),
-);
+const selectedMythologyObj = computed(() => mythologies.find((myth) => myth.name === selectedMythology.value));
 
 const logout = () => {
     router.push("/");
@@ -71,9 +67,7 @@ const goToSettings = () => {
 };
 
 const goToMyth = (mythologyKey, myth) => {
-    router.push({
-        path: `/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth.title)}`,
-    });
+    router.push({ path: `/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth.title)}` });
 };
 
 const handleClickOutside = (event) => {
@@ -148,7 +142,7 @@ onBeforeUnmount(() => {
             <div class="mt-48 flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
 
                 <h2 class="text-3xl text-center font-sans font-bold">
-                    Welcome{{ !isGuest && username ? ' ' + username : '' }}!
+                    Welcome{{ !isGuest && userStore.isAdmin ? ' Admin' : (!isGuest && username ? ' ' + username : '') }}!
                 </h2>
 
                 <!-- Input za mitologije -->

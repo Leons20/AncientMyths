@@ -13,6 +13,7 @@ import AddMyth from "@/views/AddMyth.vue";
 import ReviewView from "@/views/ReviewView.vue";
 import SettingsView from "@/views/SettingsView.vue";
 import ProfileView from "@/views/ProfileView.vue";
+import ManageView from "@/views/ManageView.vue";
 import NotFound from "@/views/NotFound.vue";
 
 const router = createRouter({
@@ -33,6 +34,7 @@ const router = createRouter({
         { path: "/review", name: "Review", component: ReviewView },
         { path: "/settings", name: "settings", component: SettingsView },
         { path: "/profile", name: "Profile", component: ProfileView },
+        { path: "/manage-accounts", name: "ManageAccounts", component: ManageView },
         { path: "/:pathMatch(.*)*", name: "NotFound", component: NotFound },
     ],
 });

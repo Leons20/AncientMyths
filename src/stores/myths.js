@@ -72,5 +72,11 @@ export const useMythStore = defineStore("myths", () => {
         myths.value[formatted].push(newMyth);
     }
 
-    return { myths, addMyth };
+    function deleteMyth(mythology, index) {
+        if (myths.value[mythology] && index >= 0 && index < myths.value[mythology].length) {
+            myths.value[mythology].splice(index, 1);
+        }
+    }
+
+    return { myths, addMyth, deleteMyth };
 });

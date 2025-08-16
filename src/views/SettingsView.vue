@@ -58,7 +58,9 @@ const goBackToMain = () => {
             <!-- Središnji sadržaj -->
             <div class="mt-48 flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
 
-                <h2 class="text-3xl text-center font-sans font-bold">Welcome {{ username }}!</h2>
+                <h2 class="text-3xl text-center font-sans font-bold">
+                    Welcome {{ userStore.isAdmin ? 'Admin' : username }}!
+                </h2>
 
                 <!-- Account dio -->
                 <div class="w-full space-y-2">
@@ -76,6 +78,16 @@ const goBackToMain = () => {
                 <!-- Actions dio -->
                 <div class="w-full space-y-2">
                     <h3 class="text-sm text-gray-700 font-bold">Actions</h3>
+                    <button
+                        v-if="userStore.isAdmin"
+                        @click="router.push('/manage-accounts')"
+                        class="bg-gray-100 hover:bg-gray-200 text-black px-1 py-2 rounded
+                            font-sans font-bold w-full text-left flex items-center"
+                    >
+                        <img src="/icons/users.svg" class="w-10 h-10" />
+                        Manage Accounts
+                    </button>
+
                     <button
                         @click="logout"
                         class="bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded

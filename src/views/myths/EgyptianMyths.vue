@@ -47,11 +47,16 @@ const goToReview = () => {
 
     router.push({ path: "/review", query });
 };
+
+const deleteReview = (index) => {
+    const path = `/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth.value?.title || "")}`;
+    reviewStore.deleteReview(path, index);
+};
 </script>
 
 <template>
     <!-- prettier-ignore -->
-    <div class="min-h-screen bg-white flex flex-col">
+    <div class="h-screen flex flex-col bg-white">
         <!-- Header -->
         <div class="h-24 bg-orange-600 text-white px-6 py-4 flex justify-between items-center border-b-4 border-orange-700">
             <h1 class="text-2xl font-bold">{{ mythologyKey }} myths</h1>
@@ -62,10 +67,10 @@ const goToReview = () => {
         </div>
 
         <!-- Sadržaj -->
-        <div class="flex-1 flex flex-col justify-start items-center px-6 py-10 text-center mt-10 relative">
-            <div class="max-w-3xl">
+        <div class="flex-1 overflow-y-auto px-6 py-6 text-center">
+            <div class="max-w-3xl mx-auto">
                 <div v-if="myth">
-                    <!-- Slika mita -->
+                    <!-- Naslov i slika mita -->
                     <div class="flex items-center justify-center mb-4 relative">
                         <img :src="myth.image" class="w-128 h-96 object-cover rounded shadow-lg absolute left-[-550px] top-0"/>
                         <h2 class="text-3xl font-bold">{{ myth.title }}</h2>
@@ -79,38 +84,73 @@ const goToReview = () => {
                         Read more...
                     </a>
 
+                    <!-- Interpretacija mita -->
                     <h3 class="text-2xl font-bold mb-2">Interpretation</h3>
                     <p class="text-xl font-semibold mb-6">{{ myth.interpretation }}</p>
 
-                    <!-- Gumb za recenziju -->
-                    <button
-                        v-if="userStore.isLoggedIn"
-                        @click="goToReview"
-                        class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded font-semibold"
-                    >
-                        Write a Review
-                    </button>
+                    <!-- Gumbi -->
+                    <div class="flex justify-center gap-4 mt-4">
+                        <button
+                            v-if="userStore.isLoggedIn"
+                            @click="goToReview"
+                            class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded font-semibold"
+                        >
+                            Write a Review
+                        </button>
+
+                        <button
+                            v-if="userStore.isAdmin"
+                            @click="mythStore.deleteMyth(mythologyKey, mythsArray.findIndex(m => m.title === myth.title))"
+                            class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold"
+                        >
+                            Delete Myth
+                        </button>
+                    </div>
                 </div>
                 <div v-else class="text-orange-600 text-3xl font-bold mt-10">Myth not found.</div>
             </div>
         </div>
 
         <!-- Recenzije -->
-        <div class="max-h-48 overflow-y-auto border-t border-gray-300 px-6 py-4">
+        <div class="flex-[0_0_20%] overflow-y-auto border-t border-gray-300 px-6 py-4">
             <h3 class="text-xl font-bold mb-3">Reviews</h3>
-            <div v-if="reviewStore.getReviews(`/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth?.title || '')}`).length" class="space-y-4">
+            <div
+                v-if="reviewStore.getReviews(`/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth?.title || '')}`).length"
+                class="space-y-4"
+            >
                 <div
                     v-for="(review, index) in reviewStore.getReviews(`/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(myth?.title || '')}`)"
                     :key="index"
-                    class="bg-gray-100 p-3 rounded shadow"
+                    class="flex items-start gap-3 bg-gray-100 p-3 rounded shadow"
                 >
-                    <div class="flex items-center mb-2 text-gray-700">
-                        <img src="/icons/user.svg" class="w-5 h-5 mr-1" />
-                        <span class="font-semibold">{{ review.username }}</span>
-                        <span class="mx-1">•</span>
-                        <span class="text-sm text-gray-500 font-semibold">{{ review.date }}</span>
+                    <!-- Delete gumb -->
+                    <button
+                        v-if="userStore.isAdmin"
+                        @click="deleteReview(index)"
+                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-bold"
+                    >
+                        Delete
+                    </button>
+
+                    <!-- Sadržaj recenzije -->
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2 text-gray-700">
+                            <img 
+                                v-if="review.profileImage" 
+                                :src="review.profileImage" 
+                                class="w-6 h-6 rounded-full mr-2 object-cover" 
+                            />
+                            <img 
+                                v-else 
+                                src="/icons/user.svg" 
+                                class="w-5 h-5 mr-2" 
+                            />
+                            <span class="font-semibold">{{ review.username }}</span>
+                            <span class="mx-1">•</span>
+                            <span class="text-sm text-gray-500 font-semibold">{{ review.date }}</span>
+                        </div>
+                        <p class="text-lg font-semibold">{{ review.text }}</p>
                     </div>
-                    <p class="text-lg font-semibold">{{ review.text }}</p>
                 </div>
             </div>
             <div v-else class="text-gray-500 italic">No reviews yet.</div>

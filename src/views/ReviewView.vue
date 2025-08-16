@@ -35,7 +35,7 @@ const goBack = () => {
 
 const postReview = () => {
     if (reviewText.value.trim() === "") return;
-    reviewStore.addReview(backPath, userStore.username, reviewText.value);
+    reviewStore.addReview(backPath, userStore.username, reviewText.value, userStore.profileImage || "");
     router.push(backPath);
 };
 </script>
