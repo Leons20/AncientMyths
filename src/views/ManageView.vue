@@ -84,20 +84,22 @@ const deleteUser = () => {
                         <h2 class="text-3xl font-bold font-sans text-center mb-30">Accounts</h2>
 
                         <!-- Lista korisnika -->
-                        <div v-for="user in users" :key="user.email" class="w-full">
-                            <input
-                                type="text"
-                                :value="user.email + (user.isCurrent ? ' (you)' : '')"
-                                readonly
-                                :disabled="user.isCurrent"
-                                class="w-full border rounded px-3 py-2 font-sans"
-                                :class="{
-                                    'cursor-pointer': !user.isCurrent,
-                                    'border-red-500 bg-red-200': selectedUser?.email === user.email && !user.isCurrent,
-                                    'bg-gray-200 text-gray-500 cursor-not-allowed': user.isCurrent
-                                }"
-                                @click="!user.isCurrent && selectUser(user)"
-                            />
+                        <div class="max-h-40 overflow-y-auto pr-1 space-y-2">
+                            <div v-for="user in users" :key="user.email" class="w-full">
+                                <input
+                                    type="text"
+                                    :value="user.email + (user.isCurrent ? ' (you)' : '')"
+                                    readonly
+                                    :disabled="user.isCurrent"
+                                    class="w-full border rounded px-3 py-2 font-sans"
+                                    :class="{
+                                        'cursor-pointer': !user.isCurrent,
+                                        'border-red-500 bg-red-200': selectedUser?.email === user.email && !user.isCurrent,
+                                        'bg-gray-200 text-gray-500 cursor-not-allowed': user.isCurrent
+                                    }"
+                                    @click="!user.isCurrent && selectUser(user)"
+                                />
+                            </div>
                         </div>
                     </div>
 

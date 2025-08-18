@@ -32,7 +32,7 @@ function login() {
         <div class="h-24 bg-orange-600 border-b-4 border-orange-700"></div>
 
         <!-- Sadržaj -->
-        <div class="relative flex-1 overflow-hidden">
+        <div class="flex-1 flex items-center justify-center relative overflow-hidden">
 
             <!-- Gornje ikone + Naslov -->
             <div class="absolute top-10 w-full flex justify-between items-center px-6">
@@ -53,7 +53,7 @@ function login() {
             </div>
 
             <!-- Forma za prijavu -->
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-xs flex flex-col items-center space-y-3">
+            <div class="w-full max-w-xs flex flex-col items-center space-y-3">
                 <input v-model="username" type="text" placeholder="Username" class="w-full border border-gray-400 rounded px-3 py-2" />
                 <input v-model="password" type="password" placeholder="Password" class="w-full border border-gray-400 rounded px-3 py-2" />
 
