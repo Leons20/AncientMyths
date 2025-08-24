@@ -1,108 +1,128 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
+import { auth, db } from "@/firebase.js";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
 
 export const useUserStore = defineStore("user", () => {
     const fullName = ref("");
     const email = ref("");
     const username = ref("");
-    const password = ref("");
+    const profileImage = ref("");
     const isLoggedIn = ref(false);
     const isGuest = ref(false);
     const isAdmin = ref(false);
     const selectedMythology = ref("");
-    const profileImage = ref("");
 
-    const allUsers = ref([
-        { fullName: "Admin", email: "admin@gmail.com", username: "Admin", password: "admin123", profileImage: "" },
-    ]);
+    const allUsers = ref([]);
 
-    function register(userData) {
-        fullName.value = userData.fullName;
-        email.value = userData.email;
-        username.value = userData.username;
-        password.value = userData.password;
-        profileImage.value = userData.profileImage || "";
-        isLoggedIn.value = true;
+    function clearUser() {
+        fullName.value = "";
+        email.value = "";
+        username.value = "";
+        profileImage.value = "";
+        isLoggedIn.value = false;
         isGuest.value = false;
-
-        if (!allUsers.value.find((u) => u.email === userData.email)) {
-            allUsers.value.push({
-                fullName: userData.fullName,
-                email: userData.email,
-                username: userData.username,
-                password: userData.password,
-                profileImage: userData.profileImage || "",
-            });
-        }
-
-        if (email.value === "admin@gmail.com" && username.value === "Admin" && password.value === "admin123") {
-            isAdmin.value = true;
-        } else {
-            isAdmin.value = false;
-        }
+        isAdmin.value = false;
     }
 
-    function login(userData) {
-        username.value = userData.username;
-        password.value = userData.password;
-        isLoggedIn.value = true;
-        isGuest.value = false;
+    function initAuthListener() {
+        onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                isLoggedIn.value = true;
+                isGuest.value = false;
 
-        const user = allUsers.value.find((u) => u.username === userData.username && u.password === userData.password);
+                const userDoc = doc(db, "users", firebaseUser.uid);
+                const snap = await getDoc(userDoc);
 
-        if (user) {
-            fullName.value = user.fullName;
-            email.value = user.email;
-            profileImage.value = user.profileImage || "";
-            if (user.username === "Admin" && user.password === "admin123") {
-                isAdmin.value = true;
+                if (snap.exists()) {
+                    const data = snap.data();
+                    fullName.value = data.fullName || "";
+                    email.value = data.email || firebaseUser.email;
+                    username.value = data.username || "";
+                    profileImage.value = data.profileImage || "";
+                    isAdmin.value = data.isAdmin || false;
+                } else {
+                    email.value = firebaseUser.email;
+                    username.value = firebaseUser.displayName || "";
+                    profileImage.value = firebaseUser.photoURL || "";
+                }
             } else {
-                isAdmin.value = false;
+                clearUser();
             }
+        });
+    }
+
+    async function logout() {
+        await signOut(auth);
+        clearUser();
+    }
+
+    async function continueAsGuest() {
+        try {
+            await signOut(auth);
+        } catch (e) {
+            console.warn("Error signing out before guest mode:", e);
         }
-    }
 
-    function continueAsGuest() {
-        fullName.value = "";
-        email.value = "";
-        username.value = "";
-        password.value = "";
-        profileImage.value = "";
-        isLoggedIn.value = false;
+        clearUser();
         isGuest.value = true;
-        isAdmin.value = false;
     }
 
-    function logout() {
-        fullName.value = "";
-        email.value = "";
-        username.value = "";
-        password.value = "";
-        profileImage.value = "";
-        isLoggedIn.value = false;
-        isGuest.value = false;
-        isAdmin.value = false;
+    async function fetchAllUsers() {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        allUsers.value = querySnapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+                id: docSnap.id,
+                fullName: data.fullName || "",
+                email: data.email || "",
+                username: data.username || "",
+                profileImage: data.profileImage || "",
+                isAdmin: data.isAdmin || false,
+            };
+        });
     }
 
-    function deleteUser(userEmail) {
-        allUsers.value = allUsers.value.filter((u) => u.email !== userEmail);
+    async function deleteUser(userId) {
+        if (auth.currentUser && auth.currentUser.uid === userId) {
+            console.warn("You cannot delete your own account.");
+            return;
+        }
+
+        const userRef = doc(db, "users", userId);
+        const snap = await getDoc(userRef);
+
+        if (!snap.exists()) {
+            console.warn("User not found.");
+            return;
+        }
+
+        const data = snap.data();
+
+        if (data.isAdmin) {
+            console.warn("Admin accounts cannot be deleted.");
+            return;
+        }
+
+        await deleteDoc(userRef);
+        await fetchAllUsers();
     }
 
     return {
         fullName,
         email,
         username,
-        password,
         profileImage,
         isLoggedIn,
         isGuest,
         isAdmin,
         selectedMythology,
         allUsers,
-        register,
-        login,
-        continueAsGuest,
+        initAuthListener,
         logout,
+        continueAsGuest,
+        fetchAllUsers,
         deleteUser,
     };
 });

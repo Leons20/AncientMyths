@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
+import { db } from "@/firebase.js";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -9,7 +11,6 @@ const userStore = useUserStore();
 const fullName = ref(userStore.fullName);
 const email = ref(userStore.email);
 const username = ref(userStore.username);
-const password = ref(userStore.password);
 
 const selectedMythology = ref("");
 
@@ -17,8 +18,6 @@ const mythologyInputFocused = ref(false);
 
 const mythologyInput = ref(null);
 const mythologiesDropdown = ref(null);
-
-const previewImage = ref(userStore.profileImage || "");
 
 const mythologies = [
     { name: "Egyptian", color: "text-orange-600" },
@@ -31,6 +30,8 @@ const mythologies = [
 
 const selectedMythologyObj = computed(() => mythologies.find((myth) => myth.name === selectedMythology.value));
 
+const originalUsername = ref(userStore.username);
+
 const goToSettings = () => {
     router.push({ path: "/settings", query: { user: username.value } });
 };
@@ -41,23 +42,55 @@ const onFileChange = (event) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             previewImage.value = e.target.result;
+            console.log("Profile image updated:", e.target.result);
         };
         reader.readAsDataURL(file);
     }
 };
 
-function saveChanges() {
+const previewImage = computed({
+    get: () => userStore.profileImage,
+    set: (val) => {
+        userStore.profileImage = val;
+    },
+});
+
+async function saveChanges() {
+    console.log("Saving changes:", {
+        fullName: fullName.value,
+        email: email.value,
+        username: username.value,
+        selectedMythology: selectedMythology.value,
+        profileImage: previewImage.value,
+    });
+
     userStore.fullName = fullName.value;
     userStore.email = email.value;
     userStore.username = username.value;
-    userStore.password = password.value;
     userStore.selectedMythology = selectedMythology.value;
-
     userStore.profileImage = previewImage.value;
 
-    const userIndex = userStore.allUsers.findIndex((u) => u.email === userStore.email);
-    if (userIndex !== -1) {
-        userStore.allUsers[userIndex].profileImage = previewImage.value;
+    try {
+        const userRef = doc(db, "users", originalUsername.value);
+        await setDoc(
+            userRef,
+            {
+                fullName: fullName.value,
+                email: email.value,
+                username: username.value,
+                selectedMythology: selectedMythology.value,
+                profileImage: previewImage.value,
+            },
+            { merge: true },
+        );
+
+        console.log("User updated in Firestore successfully");
+
+        if (originalUsername.value !== username.value) {
+            originalUsername.value = username.value;
+        }
+    } catch (error) {
+        console.error("Error updating user in Firestore:", error);
     }
 
     goToSettings();
@@ -74,8 +107,21 @@ const handleClickOutside = (event) => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     document.addEventListener("click", handleClickOutside);
+
+    const userRef = doc(db, "users", originalUsername.value);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+        const data = userSnap.data();
+        fullName.value = data.fullName;
+        email.value = data.email;
+        username.value = data.username;
+        selectedMythology.value = data.selectedMythology;
+        previewImage.value = data.profileImage;
+    }
+
     if (userStore.selectedMythology) {
         selectedMythology.value = userStore.selectedMythology;
     }
@@ -128,7 +174,6 @@ onBeforeUnmount(() => {
                                 <img
                                     :src="previewImage || '/icons/user.svg'"
                                     class="w-full h-full object-cover"
-                                    alt="Profile Image"
                                 />
                             </div>
 
@@ -147,7 +192,6 @@ onBeforeUnmount(() => {
                     <input v-model="fullName" type="text" placeholder="Full Name" class="w-full border border-gray-400 rounded px-3 py-2 font-sans" />
                     <input v-model="email" type="email" placeholder="Email" class="w-full border border-gray-400 rounded px-3 py-2 font-sans" />
                     <input v-model="username" type="text" placeholder="Username" class="w-full border border-gray-400 rounded px-3 py-2 font-sans" />
-                    <input v-model="password" type="password" placeholder="Password" class="w-full border border-gray-400 rounded px-3 py-2 font-sans" />
 
                     <!-- Input za mitologiju -->
                     <div class="relative w-full">

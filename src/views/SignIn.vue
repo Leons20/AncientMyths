@@ -2,25 +2,49 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
+import { auth, db } from "@/firebase.js";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const router = useRouter();
 const userStore = useUserStore();
 
-const username = ref(userStore.username);
-const password = ref(userStore.password);
+const username = ref("");
+const password = ref("");
+const errorMessage = ref("");
 
 const isFormValid = computed(() => {
     return username.value && password.value;
 });
 
-function login() {
-    if (isFormValid.value) {
-        userStore.login({
-            username: username.value,
-            password: password.value,
-        });
+async function login() {
+    if (!isFormValid.value) return;
+
+    try {
+        const q = query(collection(db, "users"), where("username", "==", username.value));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            errorMessage.value = "No user found with that username.";
+            return;
+        }
+
+        const userData = querySnapshot.docs[0].data();
+        const email = userData.email;
+
+        await signInWithEmailAndPassword(auth, email, password.value);
+
+        userStore.initAuthListener();
 
         router.push("/main");
+    } catch (error) {
+        console.error("Login error:", error.message);
+
+        if (error.code === "auth/invalid-credential") {
+            errorMessage.value = "Wrong password.";
+        } else {
+            errorMessage.value = "Login failed. Please check your username and password.";
+        }
     }
 }
 </script>
@@ -67,6 +91,10 @@ function login() {
                 >
                     Log In
                 </button>
+
+                <div v-if="errorMessage" class="mt-4 text-red-600 font-bold text-center">
+                    {{ errorMessage }}
+                </div>
             </div>
 
             <!-- Donje ikone -->
@@ -95,8 +123,8 @@ function login() {
 h1 {
     font-family: "Uncial Antiqua", serif;
 }
-
-input {
+input,
+div {
     font-family: sans-serif;
 }
 </style>

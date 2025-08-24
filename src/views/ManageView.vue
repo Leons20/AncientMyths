@@ -10,14 +10,26 @@ const users = ref([]);
 const selectedUser = ref(null);
 const successMessage = ref("");
 
-onMounted(() => {
-    users.value = userStore.allUsers.map((user) => ({
-        fullName: user.fullName,
-        email: user.email,
-        username: user.username,
-        password: user.password,
-        isCurrent: user.email === userStore.email,
-    }));
+onMounted(async () => {
+    await userStore.fetchAllUsers();
+
+    users.value = userStore.allUsers
+        .map((user) => ({
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            username: user.username,
+            profileImage: user.profileImage,
+            isAdmin: user.isAdmin,
+            isCurrent: user.email === userStore.email,
+        }))
+        .sort((a, b) => {
+            if (a.isAdmin) return -1;
+            if (b.isAdmin) return 1;
+            return 0;
+        });
+
+    if (selectedUser.value?.isCurrent) selectedUser.value = null;
 });
 
 const goToSettings = () => {
@@ -25,24 +37,55 @@ const goToSettings = () => {
 };
 
 const selectUser = (user) => {
-    selectedUser.value = selectedUser.value?.email === user.email ? null : user;
+    if (user.isCurrent || user.isAdmin) return;
+
+    if (selectedUser.value && selectedUser.value.id === user.id) {
+        selectedUser.value = null;
+    } else {
+        selectedUser.value = user;
+    }
 };
 
-const deleteUser = () => {
+const refreshUsers = () => {
+    users.value = userStore.allUsers
+        .map((user) => ({
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            username: user.username,
+            profileImage: user.profileImage,
+            isAdmin: user.isAdmin,
+            isCurrent: user.email === userStore.email,
+        }))
+        .sort((a, b) => {
+            if (a.isAdmin) return -1;
+            if (b.isAdmin) return 1;
+            return 0;
+        });
+
+    if (selectedUser.value?.isCurrent) selectedUser.value = null;
+};
+
+const deleteUser = async () => {
     if (!selectedUser.value) return;
 
-    userStore.deleteUser(selectedUser.value.email);
+    try {
+        await userStore.deleteUser(selectedUser.value.id);
+        refreshUsers();
+        selectedUser.value = null;
+        successMessage.value = "Account successfully deleted";
 
-    users.value = userStore.allUsers.map((user) => ({
-        fullName: user.fullName,
-        email: user.email,
-        username: user.username,
-        password: user.password,
-        isCurrent: user.email === userStore.email,
-    }));
+        setTimeout(() => {
+            successMessage.value = "";
+        }, 2000);
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        successMessage.value = "Failed to delete account";
 
-    selectedUser.value = null;
-    successMessage.value = "Account successfully deleted";
+        setTimeout(() => {
+            successMessage.value = "";
+        }, 2000);
+    }
 };
 </script>
 
@@ -88,14 +131,14 @@ const deleteUser = () => {
                             <div v-for="user in users" :key="user.email" class="w-full">
                                 <input
                                     type="text"
-                                    :value="user.email + (user.isCurrent ? ' (you)' : '')"
+                                    :value="user.email + (user.isCurrent || user.isAdmin ? ' (you)' : '')"
                                     readonly
                                     :disabled="user.isCurrent"
                                     class="w-full border rounded px-3 py-2 font-sans"
                                     :class="{
-                                        'cursor-pointer': !user.isCurrent,
+                                        'cursor-pointer': !user.isCurrent && !user.isAdmin,
                                         'border-red-500 bg-red-200': selectedUser?.email === user.email && !user.isCurrent,
-                                        'bg-gray-200 text-gray-500 cursor-not-allowed': user.isCurrent
+                                        'bg-gray-200 text-gray-500 cursor-not-allowed': user.isCurrent || user.isAdmin
                                     }"
                                     @click="!user.isCurrent && selectUser(user)"
                                 />
@@ -108,10 +151,12 @@ const deleteUser = () => {
                         <!-- Gumb Delete -->
                         <button
                             @click="deleteUser"
-                            :disabled="!selectedUser"
+                            :disabled="!selectedUser || selectedUser.isCurrent || selectedUser.isAdmin"
                             :class="[
                                 'px-4 py-2 rounded font-bold font-sans w-full',
-                                selectedUser ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-400 text-white cursor-not-allowed'
+                                selectedUser && !selectedUser.isCurrent
+                                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                                    : 'bg-red-400 text-white cursor-not-allowed'
                             ]"
                         >
                             Delete Account

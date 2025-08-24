@@ -1,34 +1,71 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useUserStore } from "@/stores/users.js";
+import { auth, db } from "@/firebase.js";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 
 const fullName = ref("");
 const email = ref("");
 const username = ref("");
 const password = ref("");
 const successMessage = ref("");
+const errorMessages = ref([]);
 
 const router = useRouter();
-const userStore = useUserStore();
 
 const isFormValid = computed(() => {
     return fullName.value && email.value && username.value && password.value;
 });
 
-function createAccount() {
-    userStore.register({
-        fullName: fullName.value,
-        email: email.value,
-        username: username.value,
-        password: password.value,
-    });
+async function createAccount() {
+    errorMessages.value = [];
 
-    successMessage.value = "Account successfully created";
+    if (!email.value.includes("@")) {
+        errorMessages.value.push("Invalid email address.");
+    }
 
-    setTimeout(() => {
-        router.push("/signin");
-    }, 2000);
+    try {
+        const usersCollection = collection(db, "users");
+        const q = query(usersCollection, where("username", "==", username.value));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            errorMessages.value.push("Username already taken.");
+        }
+    } catch (e) {
+        console.error("Error checking username:", e);
+        errorMessages.value.push("Could not verify username uniqueness.");
+    }
+
+    if (password.value.length < 6) {
+        errorMessages.value.push("Password should be at least 6 characters.");
+    }
+
+    if (errorMessages.value.length === 0) {
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value);
+            const user = userCredential.user;
+
+            await setDoc(doc(db, "users", user.uid), {
+                fullName: fullName.value,
+                email: email.value,
+                username: username.value,
+                createdAt: new Date(),
+            });
+
+            successMessage.value = "Account successfully created";
+            setTimeout(() => {
+                router.push("/signin");
+            }, 2000);
+        } catch (error) {
+            if (error.code === "auth/email-already-in-use") {
+                errorMessages.value.push("This email is already in use.");
+            }
+            if (!["auth/email-already-in-use"].includes(error.code)) {
+                errorMessages.value.push(error.message);
+            }
+        }
+    }
 }
 </script>
 
@@ -77,6 +114,12 @@ function createAccount() {
                     Create Account
                 </button>
 
+                <div v-if="errorMessages.length" class="mt-4 text-red-600 font-bold flex flex-col items-center space-y-1">
+                    <p v-for="(msg, index) in errorMessages" :key="index" class="error-message text-center">
+                        {{ msg }}
+                    </p>
+                </div>
+
                 <p v-if="successMessage" class="success-message text-green-600 font-bold mt-4">
                     {{ successMessage }}
                 </p>
@@ -108,9 +151,9 @@ function createAccount() {
 h1 {
     font-family: "Uncial Antiqua", serif;
 }
-
 input,
-.success-message {
+.success-message,
+.error-message {
     font-family: sans-serif;
 }
 </style>

@@ -3,6 +3,8 @@ import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
 import { useReviewStore } from "@/stores/reviews.js";
+import { db } from "@/firebase.js";
+import { collection, doc, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
 
 const router = useRouter();
 const route = useRoute();
@@ -11,11 +13,8 @@ const reviewStore = useReviewStore();
 
 const reviewText = ref("");
 
-const mythologyParam = route.query.mythology || "egyptian";
-const mythology = mythologyParam.toLowerCase();
-const mythologyTitle = mythologyParam.charAt(0).toUpperCase() + mythologyParam.slice(1) + " myths";
+const mythology = (route.query.mythology || "egyptian").toLowerCase();
 const mythTitle = route.query.myth || "Myth";
-
 const backPath = `/myths/${mythology}/${encodeURIComponent(mythTitle)}`;
 
 const colors = {
@@ -29,14 +28,34 @@ const colors = {
 
 const selectedColors = colors[mythology] || colors.egyptian;
 
-const goBack = () => {
-    router.push(backPath);
-};
+const goBack = () => router.push(backPath);
 
-const postReview = () => {
-    if (reviewText.value.trim() === "") return;
-    reviewStore.addReview(backPath, userStore.username, reviewText.value, userStore.profileImage || "");
-    router.push(backPath);
+const postReview = async () => {
+    if (!reviewText.value.trim()) return;
+
+    try {
+        const userRef = doc(db, "users", userStore.username);
+        const userSnap = await getDoc(userRef);
+        const profileImage = userSnap.exists() ? userSnap.data().profileImage : "";
+
+        await addDoc(collection(db, "reviews"), {
+            mythTitle,
+            mythology,
+            username: userStore.username,
+            fullName: userStore.fullName,
+            profileImage: profileImage || "",
+            text: reviewText.value,
+            createdAt: serverTimestamp(),
+        });
+
+        reviewStore.addReview(backPath, userStore.username, reviewText.value, profileImage, mythology, mythTitle);
+
+        reviewText.value = "";
+        goBack();
+    } catch (error) {
+        console.error("Failed to post review:", error);
+        alert("Failed to post review. Please try again.");
+    }
 };
 </script>
 

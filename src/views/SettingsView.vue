@@ -1,12 +1,13 @@
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
-const username = ref(userStore.username);
+const username = ref(route.query.user || userStore.username);
 
 const logout = () => {
     router.push("/");

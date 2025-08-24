@@ -92,6 +92,7 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
     document.addEventListener("click", handleClickOutside);
+    userStore.initAuthListener();
 });
 
 onBeforeUnmount(() => {
@@ -142,7 +143,7 @@ onBeforeUnmount(() => {
             <div class="mt-48 flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
 
                 <h2 class="text-3xl text-center font-sans font-bold">
-                    Welcome{{ !isGuest && userStore.isAdmin ? ' Admin' : (!isGuest && username ? ' ' + username : '') }}!
+                    Welcome{{ !isGuest && userStore.isAdmin ? ' Admin' : (!isGuest && userStore.username ? ' ' + userStore.username : '') }}!
                 </h2>
 
                 <!-- Input za mitologije -->

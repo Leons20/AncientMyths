@@ -1,7 +1,12 @@
 <script setup>
-import { RouterLink, useRoute } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
+const router = useRouter();
 const route = useRoute();
+
+const goHome = () => {
+    router.push("/");
+};
 </script>
 
 <template>
@@ -11,15 +16,18 @@ const route = useRoute();
         <div class="h-24 bg-orange-600 border-b-4 border-orange-700"></div>
 
         <!-- Sadržaj -->
-        <div class="relative flex-1 overflow-hidden">
+        <div class="flex-1 flex items-center justify-center relative overflow-hidden">
 
-            <!-- Gornje ikone -->
+            <!-- Gornje ikone + Naslov -->
             <div class="absolute top-10 w-full flex justify-between items-center px-6">
                 <!-- Lijeve ikone -->
                 <div class="flex gap-x-8">
                     <img src="/icons/spartan.svg" class="h-28" />
                     <img src="/icons/temple.svg" class="h-28 ml-24" />
                 </div>
+
+                <!-- Naslov -->
+                <h1 class="text-5xl text-orange-600 font-[Uncial Antiqua] text-center">AncientMyths</h1>
 
                 <!-- Desne ikone -->
                 <div class="flex gap-x-8">
@@ -29,13 +37,16 @@ const route = useRoute();
             </div>
 
             <!-- Poruka o grešci -->
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center px-4 flex flex-col items-center space-y-4">
+            <div class="flex flex-col items-center text-center space-y-4">
                 <p class="text-2xl font-sans text-gray-700">
                     Page <strong>{{ route.path }}</strong> doesn't exist!
                 </p>
-                <RouterLink to="/" class="w-64 bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded text-center">
+                <button
+                    class="w-64 bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded"
+                    @click="goHome"
+                >
                     Go to Home
-                </RouterLink>
+                </button>
             </div>
 
             <!-- Donje ikone -->
@@ -61,7 +72,7 @@ const route = useRoute();
 </template>
 
 <style scoped>
-p {
-    font-family: sans-serif;
+h1 {
+    font-family: "Uncial Antiqua", serif;
 }
 </style>

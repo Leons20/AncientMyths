@@ -15,8 +15,6 @@ const link = ref("");
 
 const selectFocused = ref(false);
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-
 const colors = {
     egyptian: { bg: "bg-orange-600", border: "border-orange-700", hover: "hover:bg-orange-700" },
     greek: { bg: "bg-red-600", border: "border-red-700", hover: "hover:bg-red-700" },
@@ -29,13 +27,14 @@ const colors = {
 const selectedColors = computed(() => colors[mythology.value.toLowerCase()] || colors.egyptian);
 const selectedTextColor = computed(() => selectedColors.value.bg.replace("bg", "text"));
 
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
 const goBackToMain = () => {
     router.push("/main");
 };
 
-const saveMyth = () => {
+const saveMyth = async () => {
     const missingFields = [];
-
     if (!mythology.value.trim()) missingFields.push("Mythology");
     if (!title.value.trim()) missingFields.push("Title");
     if (!mythText.value.trim()) missingFields.push("Myth text");
@@ -48,15 +47,22 @@ const saveMyth = () => {
         return;
     }
 
-    mythStore.addMyth(mythology.value, {
+    const newMyth = {
         title: title.value,
         mythText: mythText.value,
         interpretation: interpretation.value,
         image: image.value,
         link: link.value,
-    });
+    };
 
-    router.push("/main");
+    try {
+        await mythStore.addMyth(mythology.value, newMyth);
+
+        router.push("/main");
+    } catch (error) {
+        console.error("Error saving myth:", error);
+        alert("Failed to save myth. Please try again.");
+    }
 };
 
 const handleClickOutside = (event) => {
@@ -105,7 +111,7 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Forma -->
-            <div class="flex-1 flex flex-col justify-center items-center pb-15 px-6">
+            <div class="flex-1 flex flex-col justify-center items-center pb-15">
                 <div class="max-w-lg w-full">
                     <!-- Dropdown za mitologiju -->
                     <div class="relative w-full mb-4 mythology-select">

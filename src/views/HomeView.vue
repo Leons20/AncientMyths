@@ -1,8 +1,9 @@
 <script setup>
-import { RouterLink } from "vue-router";
+import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
 
 const userStore = useUserStore();
+const router = useRouter();
 </script>
 
 <template>
@@ -12,7 +13,7 @@ const userStore = useUserStore();
         <div class="h-24 bg-orange-600 border-b-4 border-orange-700"></div>
 
         <!-- Sadržaj -->
-        <div class="relative flex-1 overflow-hidden">
+        <div class="flex-1 flex items-center justify-center relative overflow-hidden">
 
             <!-- Gornje ikone + Naslov -->
             <div class="absolute top-10 w-full flex justify-between items-center px-6">
@@ -33,22 +34,25 @@ const userStore = useUserStore();
             </div>
 
             <!-- Gumbi -->
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center space-y-4">
-                <RouterLink to="/signup" class="w-64">
-                    <button class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded">
-                        Sign Up
-                    </button>
-                </RouterLink>
-                <RouterLink to="/signin" class="w-64">
-                    <button class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded">
-                        Sign In
-                    </button>
-                </RouterLink>
-                <RouterLink to="/main" class="w-64" @click.native="userStore.continueAsGuest()">
-                    <button class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold font-sans py-2 rounded">
-                        Continue as Guest
-                    </button>
-                </RouterLink>
+            <div class="flex-1 flex flex-col items-center justify-center space-y-4">
+                <button
+                    class="w-64 bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded"
+                    @click="router.push('/signup')"
+                >
+                    Sign Up
+                </button>
+                <button
+                    class="w-64 bg-orange-600 hover:bg-orange-700 text-white font-bold font-sans py-2 rounded"
+                    @click="router.push('/signin')"
+                >
+                    Sign In
+                </button>
+                <button
+                    class="w-64 bg-gray-700 hover:bg-gray-800 text-white font-bold font-sans py-2 rounded"
+                    @click="() => { userStore.continueAsGuest(); router.push('/main') }"
+                >
+                    Continue as Guest
+                </button>
             </div>
 
             <!-- Donje ikone -->
