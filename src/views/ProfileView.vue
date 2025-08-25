@@ -2,8 +2,6 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
-import { db } from "@/firebase.js";
-import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -11,11 +9,11 @@ const userStore = useUserStore();
 const fullName = ref(userStore.fullName);
 const email = ref(userStore.email);
 const username = ref(userStore.username);
+const selectedMythology = ref(userStore.selectedMythology);
 
-const selectedMythology = ref("");
+const originalUsername = ref(userStore.username);
 
 const mythologyInputFocused = ref(false);
-
 const mythologyInput = ref(null);
 const mythologiesDropdown = ref(null);
 
@@ -28,24 +26,10 @@ const mythologies = [
     { name: "Mayan", color: "text-green-600" },
 ];
 
-const selectedMythologyObj = computed(() => mythologies.find((myth) => myth.name === selectedMythology.value));
-
-const originalUsername = ref(userStore.username);
+const selectedMythologyObj = computed(() => mythologies.find((m) => m.name === selectedMythology.value));
 
 const goToSettings = () => {
     router.push({ path: "/settings", query: { user: username.value } });
-};
-
-const onFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previewImage.value = e.target.result;
-            console.log("Profile image updated:", e.target.result);
-        };
-        reader.readAsDataURL(file);
-    }
 };
 
 const previewImage = computed({
@@ -55,46 +39,36 @@ const previewImage = computed({
     },
 });
 
-async function saveChanges() {
-    console.log("Saving changes:", {
-        fullName: fullName.value,
-        email: email.value,
-        username: username.value,
-        selectedMythology: selectedMythology.value,
-        profileImage: previewImage.value,
-    });
+const onFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const newImage = e.target.result;
+        previewImage.value = newImage;
+        await userStore.updateProfileImage(newImage);
+    };
+    reader.readAsDataURL(file);
+};
+
+const saveChanges = async () => {
     userStore.fullName = fullName.value;
     userStore.email = email.value;
     userStore.username = username.value;
-    userStore.selectedMythology = selectedMythology.value;
-    userStore.profileImage = previewImage.value;
 
-    try {
-        const userRef = doc(db, "users", originalUsername.value);
-        await setDoc(
-            userRef,
-            {
-                fullName: fullName.value,
-                email: email.value,
-                username: username.value,
-                selectedMythology: selectedMythology.value,
-                profileImage: previewImage.value,
-            },
-            { merge: true },
-        );
+    await userStore.updateMythology(selectedMythology.value);
 
-        console.log("User updated in Firestore successfully");
+    if (previewImage.value) {
+        await userStore.updateProfileImage(previewImage.value);
+    }
 
-        if (originalUsername.value !== username.value) {
-            originalUsername.value = username.value;
-        }
-    } catch (error) {
-        console.error("Error updating user in Firestore:", error);
+    if (originalUsername.value !== username.value) {
+        originalUsername.value = username.value;
     }
 
     goToSettings();
-}
+};
 
 const handleClickOutside = (event) => {
     if (
@@ -107,24 +81,12 @@ const handleClickOutside = (event) => {
     }
 };
 
-onMounted(async () => {
+onMounted(() => {
     document.addEventListener("click", handleClickOutside);
-
-    const userRef = doc(db, "users", originalUsername.value);
-    const userSnap = await getDoc(userRef);
-
-    if (userSnap.exists()) {
-        const data = userSnap.data();
-        fullName.value = data.fullName;
-        email.value = data.email;
-        username.value = data.username;
-        selectedMythology.value = data.selectedMythology;
-        previewImage.value = data.profileImage;
-    }
-
-    if (userStore.selectedMythology) {
-        selectedMythology.value = userStore.selectedMythology;
-    }
+    fullName.value = userStore.fullName;
+    email.value = userStore.email;
+    username.value = userStore.username;
+    selectedMythology.value = userStore.selectedMythology;
 });
 
 onBeforeUnmount(() => {

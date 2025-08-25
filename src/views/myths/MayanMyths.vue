@@ -28,6 +28,11 @@ const reviewPath = computed(
 
 let unsubscribe = null;
 
+function getUserProfileImage(username) {
+    const user = userStore.allUsers.find((u) => u.username === username);
+    return user?.profileImage || "/icons/user.svg";
+}
+
 function attachReviewListener() {
     if (!currentMyth.value) {
         reviewStore.setReviews(reviewPath.value, []);
@@ -69,7 +74,6 @@ function attachReviewListener() {
                     id: doc.id,
                     username: username,
                     text: text,
-                    profileImage: data.profileImage ? data.profileImage : "/icons/user.svg",
                     mythology: data.mythology || "",
                     mythTitle: data.mythTitle || "",
                     date: formattedDate,
@@ -81,7 +85,9 @@ function attachReviewListener() {
     });
 }
 
-onMounted(() => {
+onMounted(async () => {
+    await userStore.fetchAllUsers();
+
     if (!mythsArray.value.length) {
         currentMyth.value = null;
     } else if (!route.params.title) {
@@ -232,7 +238,10 @@ const deleteMyth = async () => {
                     <!-- Sadržaj recenzije -->
                     <div class="flex-1">
                         <div class="flex items-center mb-2 text-gray-700">
-                            <img :src="review.profileImage" class="w-6 h-6 rounded-full mr-2 object-cover" />
+                            <img
+                                :src="getUserProfileImage(review.username)"
+                                class="w-6 h-6 rounded-full mr-2 object-cover"
+                            />
                             <span class="font-semibold">{{ review.username }}</span>
                             <span class="mx-1">•</span>
                             <span class="text-sm text-gray-500 font-semibold">{{ review.date }}</span>

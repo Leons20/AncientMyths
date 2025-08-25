@@ -14,7 +14,7 @@ const username = ref(userStore.username);
 const selectedMyth = ref("");
 
 const selectedMythology = computed({
-    get: () => userStore.selectedMythology,
+    get: () => userStore.selectedMythology || "",
     set: (value) => {
         userStore.selectedMythology = value;
     },

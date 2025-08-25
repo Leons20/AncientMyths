@@ -2,20 +2,21 @@
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/users.js";
-import { useReviewStore } from "@/stores/reviews.js";
-import { db } from "@/firebase.js";
+import { db, auth } from "@/firebase.js";
 import { collection, doc, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
-const reviewStore = useReviewStore();
 
 const reviewText = ref("");
 
 const mythology = (route.query.mythology || "egyptian").toLowerCase();
 const mythTitle = route.query.myth || "Myth";
 const backPath = `/myths/${mythology}/${encodeURIComponent(mythTitle)}`;
+
+const mythologyTitle =
+    (route.query.mythology || "Egyptian").charAt(0).toUpperCase() + (route.query.mythology || "Egyptian").slice(1);
 
 const colors = {
     egyptian: { bg: "bg-orange-600", border: "border-orange-700", hover: "hover:bg-orange-700" },
@@ -34,7 +35,9 @@ const postReview = async () => {
     if (!reviewText.value.trim()) return;
 
     try {
-        const userRef = doc(db, "users", userStore.username);
+        if (!auth.currentUser) throw new Error("No authenticated user");
+
+        const userRef = doc(db, "users", auth.currentUser.uid);
         const userSnap = await getDoc(userRef);
         const profileImage = userSnap.exists() ? userSnap.data().profileImage : "";
 
@@ -47,8 +50,6 @@ const postReview = async () => {
             text: reviewText.value,
             createdAt: serverTimestamp(),
         });
-
-        reviewStore.addReview(backPath, userStore.username, reviewText.value, profileImage, mythology, mythTitle);
 
         reviewText.value = "";
         goBack();
@@ -64,7 +65,7 @@ const postReview = async () => {
     <div class="min-h-screen bg-white flex flex-col">
         <!-- Header -->
         <div :class="['h-24 text-white px-6 py-4 flex justify-between items-center border-b-4', selectedColors.bg, selectedColors.border]">
-            <h1 class="text-2xl font-bold">{{ mythologyTitle }}</h1>
+            <h1 class="text-2xl font-bold">{{ mythologyTitle }} myths</h1>
             <button @click="goBack" class="flex items-center space-x-2 font-semibold">
                 <img src="/icons/back.svg" class="w-10 h-10 filter invert" />
                 <span class="text-xl">Back to Myth</span>

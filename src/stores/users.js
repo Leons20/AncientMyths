@@ -2,7 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import { auth, db } from "@/firebase.js";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
 
 export const useUserStore = defineStore("user", () => {
     const fullName = ref("");
@@ -24,6 +24,7 @@ export const useUserStore = defineStore("user", () => {
         isLoggedIn.value = false;
         isGuest.value = false;
         isAdmin.value = false;
+        selectedMythology.value = "";
     }
 
     function initAuthListener() {
@@ -42,6 +43,7 @@ export const useUserStore = defineStore("user", () => {
                     username.value = data.username || "";
                     profileImage.value = data.profileImage || "";
                     isAdmin.value = data.isAdmin || false;
+                    selectedMythology.value = data.selectedMythology || "";
                 } else {
                     email.value = firebaseUser.email;
                     username.value = firebaseUser.displayName || "";
@@ -79,6 +81,7 @@ export const useUserStore = defineStore("user", () => {
                 email: data.email || "",
                 username: data.username || "",
                 profileImage: data.profileImage || "",
+                selectedMythology: data.selectedMythology || "",
                 isAdmin: data.isAdmin || false,
             };
         });
@@ -109,6 +112,22 @@ export const useUserStore = defineStore("user", () => {
         await fetchAllUsers();
     }
 
+    async function updateProfileImage(newUrl) {
+        if (!auth.currentUser) return;
+
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await setDoc(userRef, { profileImage: newUrl }, { merge: true });
+        profileImage.value = newUrl;
+    }
+
+    async function updateMythology(newMythology) {
+        if (!auth.currentUser) return;
+
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await setDoc(userRef, { selectedMythology: newMythology }, { merge: true });
+        selectedMythology.value = newMythology;
+    }
+
     return {
         fullName,
         email,
@@ -124,5 +143,7 @@ export const useUserStore = defineStore("user", () => {
         continueAsGuest,
         fetchAllUsers,
         deleteUser,
+        updateProfileImage,
+        updateMythology,
     };
 });
