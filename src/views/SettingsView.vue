@@ -9,7 +9,8 @@ const userStore = useUserStore();
 
 const username = ref(route.query.user || userStore.username);
 
-const logout = () => {
+const logout = async () => {
+    await userStore.logout();
     router.push("/");
 };
 

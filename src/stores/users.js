@@ -34,6 +34,7 @@ export const useUserStore = defineStore("user", () => {
             if (firebaseUser) {
                 isLoggedIn.value = true;
                 isGuest.value = false;
+                localStorage.removeItem("isGuest");
 
                 const userDoc = doc(db, "users", firebaseUser.uid);
                 const snap = await getDoc(userDoc);
@@ -52,7 +53,12 @@ export const useUserStore = defineStore("user", () => {
                     profileImage.value = firebaseUser.photoURL || "";
                 }
             } else {
-                clearUser(true);
+                const wasGuest = localStorage.getItem("isGuest") === "true";
+                if (wasGuest) {
+                    continueAsGuest();
+                } else {
+                    clearUser(true);
+                }
             }
         });
     }
@@ -60,6 +66,7 @@ export const useUserStore = defineStore("user", () => {
     async function logout() {
         await signOut(auth);
         clearUser();
+        localStorage.removeItem("isGuest");
     }
 
     async function continueAsGuest() {
@@ -71,6 +78,7 @@ export const useUserStore = defineStore("user", () => {
 
         clearUser();
         isGuest.value = true;
+        localStorage.setItem("isGuest", "true");
     }
 
     async function fetchAllUsers() {

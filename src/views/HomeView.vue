@@ -4,6 +4,11 @@ import { useUserStore } from "@/stores/users.js";
 
 const userStore = useUserStore();
 const router = useRouter();
+
+const continueAsGuest = () => {
+    userStore.continueAsGuest();
+    router.push("/main");
+};
 </script>
 
 <template>
@@ -49,7 +54,7 @@ const router = useRouter();
                 </button>
                 <button
                     class="w-64 bg-gray-700 hover:bg-gray-800 text-white font-bold font-sans py-2 rounded"
-                    @click="() => { userStore.continueAsGuest(); router.push('/main') }"
+                    @click="continueAsGuest"
                 >
                     Continue as Guest
                 </button>

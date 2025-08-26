@@ -57,7 +57,8 @@ const filteredMyths = computed(() => {
 
 const selectedMythologyObj = computed(() => mythologies.find((myth) => myth.name === selectedMythology.value));
 
-const logout = () => {
+const logout = async () => {
+    await userStore.logout();
     router.push("/");
 };
 
