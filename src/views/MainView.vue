@@ -90,9 +90,11 @@ const handleClickOutside = (event) => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     document.addEventListener("click", handleClickOutside);
     userStore.initAuthListener();
+
+    await mythStore.fetchMyths();
 });
 
 onBeforeUnmount(() => {

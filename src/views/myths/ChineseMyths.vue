@@ -120,8 +120,9 @@ const goToReview = () => {
     });
 };
 
-const isDefaultMyth = (index) => {
-    return index === 0;
+const isDefaultMyth = () => {
+    if (!currentMyth.value) return false;
+    return currentMyth.value.isDefault === true;
 };
 
 const deleteMyth = async () => {

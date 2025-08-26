@@ -136,8 +136,20 @@ export const useMythStore = defineStore("myths", () => {
     }
 
     async function addMyth(mythology, newMyth) {
+        const formatted = formatMythologyName(mythology);
+
+        if (myths.value[formatted]) {
+            for (let i = 0; i < myths.value[formatted].length; i++) {
+                if (myths.value[formatted][i].title === newMyth.title) {
+                    console.warn("This myth already exists.");
+                    return;
+                }
+            }
+        } else {
+            myths.value[formatted] = [];
+        }
+
         try {
-            const formatted = formatMythologyName(mythology);
             const docRef = await addDoc(collection(db, "myths"), {
                 mythology: formatted,
                 title: newMyth.title,
@@ -148,7 +160,6 @@ export const useMythStore = defineStore("myths", () => {
                 createdAt: serverTimestamp(),
             });
 
-            if (!myths.value[formatted]) myths.value[formatted] = [];
             myths.value[formatted].push({
                 id: docRef.id,
                 mythology: formatted,

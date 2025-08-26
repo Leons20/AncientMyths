@@ -13,6 +13,7 @@ const interpretation = ref("");
 const image = ref("");
 const link = ref("");
 
+const errorMessage = ref("");
 const selectFocused = ref(false);
 
 const colors = {
@@ -47,6 +48,19 @@ const saveMyth = async () => {
         return;
     }
 
+    const formattedMythology = capitalize(mythology.value);
+    const existing = mythStore.myths[formattedMythology]?.find(
+        (m) => m.title.trim().toLowerCase() === title.value.trim().toLowerCase(),
+    );
+
+    if (existing) {
+        errorMessage.value = "Myth already exists.";
+        setTimeout(() => {
+            errorMessage.value = "";
+        }, 2000);
+        return;
+    }
+
     const newMyth = {
         title: title.value,
         mythText: mythText.value,
@@ -57,7 +71,6 @@ const saveMyth = async () => {
 
     try {
         await mythStore.addMyth(mythology.value, newMyth);
-
         router.push("/main");
     } catch (error) {
         console.error("Error saving myth:", error);
@@ -160,12 +173,17 @@ onBeforeUnmount(() => {
                     <!-- Link -->
                     <input v-model="link" placeholder="Full myth link" :class="['w-full rounded p-3 text-lg mb-4 border-2', selectedColors.border]" />
 
+                    <!-- Gumb -->
                     <button
                         @click="saveMyth"
                         :class="['text-white px-6 py-2 rounded font-semibold w-full', selectedColors.bg, selectedColors.hover]"
                     >
                         Save Myth
                     </button>
+
+                    <div v-if="errorMessage" class="text-red-600 font-bold mt-2 text-center">
+                        {{ errorMessage }}
+                    </div>
                 </div>
             </div>
 
