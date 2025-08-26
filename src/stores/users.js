@@ -16,13 +16,15 @@ export const useUserStore = defineStore("user", () => {
 
     const allUsers = ref([]);
 
-    function clearUser() {
+    function clearUser(preserveGuest = false) {
         fullName.value = "";
         email.value = "";
         username.value = "";
         profileImage.value = "";
         isLoggedIn.value = false;
-        isGuest.value = false;
+        if (!preserveGuest) {
+            isGuest.value = false;
+        }
         isAdmin.value = false;
         selectedMythology.value = "";
     }
@@ -50,7 +52,7 @@ export const useUserStore = defineStore("user", () => {
                     profileImage.value = firebaseUser.photoURL || "";
                 }
             } else {
-                clearUser();
+                clearUser(true);
             }
         });
     }

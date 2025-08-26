@@ -15,7 +15,6 @@ const reviewStore = useReviewStore();
 
 const mythologyKey = "Mayan";
 
-const isGuest = computed(() => userStore.isGuest);
 const mythsArray = computed(() => mythStore.myths[mythologyKey] || []);
 
 const currentMyth = ref(null);
@@ -105,25 +104,20 @@ onUnmounted(() => {
 });
 
 const goBackToMain = () => {
-    if (isGuest.value) {
-        router.push({ path: "/main", query: { guest: "true" } });
-    } else {
-        router.push("/main");
-    }
+    router.push("/main");
 };
 
 const goToReview = () => {
     if (!currentMyth.value) return;
 
-    const queryData = {
-        from: `/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(currentMyth.value.title)}`,
-        mythology: mythologyKey,
-        myth: currentMyth.value.title,
-    };
-
-    if (isGuest.value) queryData.guest = "true";
-
-    router.push({ path: "/review", query: queryData });
+    router.push({
+        path: "/review",
+        query: {
+            from: `/myths/${mythologyKey.toLowerCase()}/${encodeURIComponent(currentMyth.value.title)}`,
+            mythology: mythologyKey,
+            myth: currentMyth.value.title,
+        },
+    });
 };
 
 const isDefaultMyth = (index) => {
